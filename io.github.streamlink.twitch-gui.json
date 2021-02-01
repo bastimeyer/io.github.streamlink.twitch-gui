@@ -1,0 +1,75 @@
+{
+  "id": "io.github.streamlink.twitch-gui",
+
+  "runtime": "org.freedesktop.Platform",
+  "runtime-version": "20.08",
+  "sdk": "org.freedesktop.Sdk",
+  "sdk-extensions": [
+    "org.freedesktop.Sdk.Extension.node14"
+  ],
+
+  "command": "streamlink-twitch-gui",
+
+  "finish-args": [
+    "--share=network",
+    "--share=ipc",
+    "--socket=x11",
+    "--filesystem=xdg-cache/streamlink-twitch-gui",
+    "--filesystem=xdg-config/streamlink-twitch-gui",
+    "--filesystem=xdg-data/streamlink-twitch-gui"
+  ],
+
+  "modules": [
+    {
+      "name": "yarn",
+      "buildsystem": "simple",
+      "build-commands": [
+        "cp -a * /app"
+      ],
+      "cleanup": [
+        "*"
+      ],
+      "sources": [
+        {
+          "type": "archive",
+          "url": "https://github.com/yarnpkg/yarn/releases/download/v1.22.10/yarn-v1.22.10.tar.gz",
+          "sha256": "7e433d4a77e2c79e6a7ae4866782608a8e8bcad3ec6783580577c59538381a6e"
+        }
+      ]
+    },
+    {
+      "name": "streamlink-twitch-gui",
+      "buildsystem": "simple",
+      "build-options": {
+        "append-path": "/usr/lib/sdk/node14/bin:/app/yarn/bin"
+      },
+      "build-commands": [
+        "HOME=$PWD yarn config --offline set yarn-offline-mirror $FLATPAK_BUILDER_BUILDDIR/flatpak-node/yarn-mirror",
+        "HOME=$PWD yarn install --offline --pure-lockfile --no-progress --non-interactive",
+        "HOME=$PWD yarn run grunt clean:tmp_prod webpack:prod compile:linux64",
+        "mv build/releases/streamlink-twitch-gui/linux64 /app/streamlink-twitch-gui",
+        "install -Dm755 start-streamlink-twitch-gui.sh /app/bin/streamlink-twitch-gui",
+        "rm -r /app/streamlink-twitch-gui/{{add,remove}-menuitem.sh,icons/}"
+      ],
+      "sources": [
+        {
+          "type": "git",
+          "url": "https://github.com/streamlink/streamlink-twitch-gui.git",
+          "tag": "v1.11.0",
+          "commit": "fe7a8b42edca23c6354b87957bb37584b2142408"
+        },
+        {
+          "type": "archive",
+          "url": "https://dl.nwjs.io/v0.45.5/nwjs-v0.45.5-linux-x64.tar.gz",
+          "sha256": "bad5cf63f2553b5c53ae1752f3506a99f434d3f142ef0fb43a8a9d1e5518b6ac",
+          "dest": "build/cache/0.45.5-normal/linux64/"
+        },
+        "streamlink-twitch-gui.json",
+        {
+          "type": "file",
+          "path": "start-streamlink-twitch-gui.sh"
+        }
+      ]
+    }
+  ]
+}
